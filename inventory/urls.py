@@ -4,7 +4,7 @@ from .views import (
     ShopInventoryViewSet, InventoryStockView, InventoryStockInView,
     InventorySaleView, ShopFinancialSummaryViewSet, InventoryTransactionViewSet,
     ShopInventoryLegacyViewSet, InventoryDistributionView, InventoryDistributionBulkView,
-    ShopInventoryByShopView
+    ShopInventoryByShopView, InventoryCSVUploadView
 )
 
 router = DefaultRouter()
@@ -24,6 +24,7 @@ urlpatterns = router.urls + [
     # New inventory system endpoints
     path('stock-in/', InventoryStockInView.as_view(), name='inventory-stock-in'),
     path('process-sale/', InventorySaleView.as_view(), name='inventory-sale'),
+    path('inventory-csv-upload/', InventoryCSVUploadView.as_view(), name='inventory-csv-upload'),
     
     # Inventory Distribution endpoints for distributors
     path('distribution/', InventoryDistributionView.as_view(), name='inventory-distribution'),

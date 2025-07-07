@@ -465,7 +465,7 @@ class ShopInventoryByShopView(APIView):
                 'low_stock_items': ShopInventorySerializer(low_stock_items, many=True).data
             },
             'financial_summary': {
-                'month': financial_summary.month_display,
+                'month': financial_summary.month.strftime('%B %Y'),
                 'total_revenue': float(financial_summary.total_revenue),
                 'total_cost': float(financial_summary.total_cost),
                 'total_profit': float(financial_summary.total_profit),
@@ -654,3 +654,125 @@ class ShopInventoryLegacyViewSet(viewsets.ReadOnlyModelViewSet):
             status='IN_STOCK',
             shop=self.request.user.shop
         )
+
+
+class InventoryCSVUploadView(APIView):
+    """CSV upload endpoint for inventory management"""
+    permission_classes = [IsAuthenticated, IsDistributor]
+    parser_classes = [MultiPartParser, FormParser]
+    
+    def post(self, request):
+        shop_id = request.data.get('shop_id')
+        file_obj = request.FILES.get('file')
+        
+        if not shop_id:
+            return Response(
+                {'error': 'shop_id is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not file_obj:
+            return Response(
+                {'error': 'file is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            shop = Shop.objects.get(id=shop_id)
+        except Shop.DoesNotExist:
+            return Response(
+                {'error': 'Shop not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check if file is CSV
+        if not file_obj.name.endswith('.csv'):
+            return Response(
+                {'error': 'File must be a CSV'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            with transaction.atomic():
+                # Read CSV file
+                file_data = file_obj.read().decode('utf-8')
+                csv_reader = csv.DictReader(io.StringIO(file_data))
+                
+                processed_items = []
+                errors = []
+                
+                for row_num, row in enumerate(csv_reader, start=2):  # Start from 2 to account for header
+                    frame_id = row.get('frame_id', '').strip()
+                    quantity_str = row.get('quantity', '').strip()
+                    
+                    if not frame_id or not quantity_str:
+                        errors.append(f"Row {row_num}: Missing frame_id or quantity")
+                        continue
+                    
+                    try:
+                        quantity = int(quantity_str)
+                        if quantity <= 0:
+                            errors.append(f"Row {row_num}: Quantity must be positive")
+                            continue
+                    except ValueError:
+                        errors.append(f"Row {row_num}: Invalid quantity format")
+                        continue
+                    
+                    # Find frame by product_id
+                    try:
+                        frame = Frame.objects.get(product_id=frame_id)
+                    except Frame.DoesNotExist:
+                        errors.append(f"Row {row_num}: Frame with ID '{frame_id}' not found")
+                        continue
+                    
+                    # Get or create shop inventory
+                    shop_inventory, created = ShopInventory.objects.get_or_create(
+                        shop=shop,
+                        frame=frame,
+                        defaults={
+                            'quantity_received': quantity,
+                            'cost_per_unit': frame.price
+                        }
+                    )
+                    
+                    if not created:
+                        # Update existing inventory
+                        shop_inventory.quantity_received += quantity
+                        shop_inventory.save()
+                    
+                    # Create transaction record
+                    InventoryTransaction.objects.create(
+                        shop_inventory=shop_inventory,
+                        transaction_type='STOCK_IN',
+                        quantity=quantity,
+                        unit_cost=frame.price,
+                        created_by=request.user,
+                        notes=f"CSV upload - Row {row_num}"
+                    )
+                    
+                    processed_items.append({
+                        'frame_id': frame_id,
+                        'frame_name': frame.name,
+                        'quantity_added': quantity,
+                        'inventory_created': created,
+                        'row_number': row_num
+                    })
+                
+                if errors:
+                    return Response({
+                        'error': 'CSV processing had errors',
+                        'errors': errors,
+                        'processed_items_count': len(processed_items)
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                return Response({
+                    'message': f'Successfully processed {len(processed_items)} items',
+                    'processed_items': processed_items,
+                    'shop_name': shop.name
+                }, status=status.HTTP_201_CREATED)
+                
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to process CSV: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
