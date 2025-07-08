@@ -4,7 +4,7 @@ from .views import (
     ShopInventoryViewSet, InventoryStockView, InventoryStockInView,
     InventorySaleView, ShopFinancialSummaryViewSet, InventoryTransactionViewSet,
     ShopInventoryLegacyViewSet, InventoryDistributionView, InventoryDistributionBulkView,
-    ShopInventoryByShopView, InventoryCSVUploadView
+    ShopInventoryByShopView, InventoryCSVUploadView, ShopBillingReportView
 )
 
 router = DefaultRouter()
@@ -30,4 +30,5 @@ urlpatterns = router.urls + [
     path('distribution/', InventoryDistributionView.as_view(), name='inventory-distribution'),
     path('distribution/bulk/', InventoryDistributionBulkView.as_view(), name='inventory-distribution-bulk'),
     path('shops/<int:shop_id>/inventory/', ShopInventoryByShopView.as_view(), name='shop-inventory-detail'),
+    path('shops/<int:shop_id>/billing-report/', ShopBillingReportView.as_view(), name='shop-billing-report'),
 ] 
