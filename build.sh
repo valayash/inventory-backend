@@ -12,16 +12,15 @@ from users.models import User
 
 username = "admin"
 password = "admin123"
-email = "admin@example.com"
 
 if not User.objects.filter(username=username).exists():
     print(f"Creating distributor user: {username}")
-    User.objects.create_superuser(
+    user = User.objects.create_superuser(
         username=username,
-        password=password,
-        email=email,
-        role='DISTRIBUTOR'
+        password=password
     )
+    user.role = 'DISTRIBUTOR'
+    user.save()
     print("Distributor user created successfully.")
 else:
     print(f"Distributor user {username} already exists.")
