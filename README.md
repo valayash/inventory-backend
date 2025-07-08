@@ -2,6 +2,24 @@
 
 This is the backend for the Inventory Management System, built with Django and Django REST Framework. It provides a robust API for managing shops, products, inventory, sales, and analytics for a multi-shop eyewear distribution business.
 
+## Deployment
+
+- **Live API URL:** [https://inventory-backend-x27d.onrender.com](https://inventory-backend-x27d.onrender.com)
+- **Frontend Application:** [https://inventory-frontend-odle.onrender.com](https://inventory-frontend-odle.onrender.com)
+
+## Login Credentials
+
+Here are some sample credentials to access the deployed application.
+
+### Distributor Account
+-   **Username**: `admin`
+-   **Password**: `admin123`
+
+### Shop Owner Account
+*(You can create more shops and users via the Distributor portal)*
+-   **Username**: `valayash`
+-   **Password**: `123456`
+
 ## Key Features
 
 *   **User Roles**: JWT-based authentication with two distinct user roles: `DISTRIBUTOR` and `SHOP_OWNER`.
