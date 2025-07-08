@@ -4,24 +4,6 @@ from datetime import datetime
 
 # Create your models here.
 
-class InventoryItem(models.Model):
-    """
-    DEPRECATED: Legacy individual item tracking
-    This model is kept for backward compatibility
-    """
-    class Status(models.TextChoices):
-        IN_STOCK = 'IN_STOCK', 'In Stock'
-        SOLD = 'SOLD', 'Sold'
-    
-    frame = models.ForeignKey('products.Frame', on_delete=models.PROTECT)
-    shop = models.ForeignKey('shops.Shop', on_delete=models.CASCADE)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.IN_STOCK)
-    date_stocked = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.frame.name} at {self.shop.name} - {self.get_status_display()}"
-
-
 class ShopInventory(models.Model):
     """
     New quantity-based inventory tracking for each shop

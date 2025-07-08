@@ -1,14 +1,7 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import InventoryItem, ShopInventory, ShopFinancialSummary, InventoryTransaction
+from .models import ShopInventory, ShopFinancialSummary, InventoryTransaction
 from products.models import Frame
-
-
-class InventoryItemSerializer(serializers.ModelSerializer):
-    """Legacy serializer for backward compatibility"""
-    class Meta:
-        model = InventoryItem
-        fields = '__all__'
-        depth = 1
 
 
 class ShopInventorySerializer(serializers.ModelSerializer):
